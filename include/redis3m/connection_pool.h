@@ -6,11 +6,10 @@
 #include <string>
 #include <set>
 #include <redis3m/connection.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/thread/mutex.hpp>
+#include <memory>
+#include <mutex>
 #include <redis3m/utils/exception.h>
-#include <boost/function.hpp>
+#include <redis3m/utils/noncopyable.h>
 
 namespace redis3m {
     REDIS3M_EXCEPTION(cannot_find_sentinel)
@@ -18,14 +17,15 @@ namespace redis3m {
     REDIS3M_EXCEPTION(cannot_find_slave)
     REDIS3M_EXCEPTION(too_much_retries)
     REDIS3M_EXCEPTION(wrong_database)
+    REDIS3M_EXCEPTION(role_dont_match)
     /**
      * @brief Manages a connection pool, using a Redis Sentinel
      * to get instances ip, managing also failover
      */
-    class connection_pool: boost::noncopyable
+    class connection_pool: utils::noncopyable
     {
     public:
-        typedef boost::shared_ptr<connection_pool> ptr_t;
+        typedef std::shared_ptr<connection_pool> ptr_t;
 
         /**
          * @brief Create a new connection_pool
@@ -67,7 +67,7 @@ namespace redis3m {
          * @param retries how much retries do
          * @return
          */
-        Ret run_with_connection(boost::function<Ret(connection::ptr_t)> f,
+        Ret run_with_connection(std::function<Ret(connection::ptr_t)> f,
                                 connection::role_t conn_type = connection::MASTER,
                                 unsigned int retries=5)
         {
@@ -79,7 +79,8 @@ namespace redis3m {
                     Ret r = f(c);
                     put(c);
                     return r;
-                } catch (const transport_failure& ex)
+                }
+                catch (const connection_error& ex)
                 {
                     --retries;
                 }
@@ -101,8 +102,8 @@ namespace redis3m {
         connection::ptr_t create_slave_connection();
         connection::ptr_t create_master_connection();
         connection::ptr_t sentinel_connection();
-
-        boost::mutex access_mutex;
+        static connection::role_t get_role(connection::ptr_t conn);
+        std::mutex access_mutex;
         std::set<connection::ptr_t> connections;
 
         std::vector<std::string> sentinel_hosts;
@@ -112,7 +113,8 @@ namespace redis3m {
     };
 
     template<>
-    void connection_pool::run_with_connection(boost::function<void(connection::ptr_t)> f,
+    void connection_pool::run_with_connection(std::function<void(connection::ptr_t)> f,
                                 connection::role_t conn_type,
                                 unsigned int retries);
 }
+

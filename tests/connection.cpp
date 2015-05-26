@@ -24,6 +24,11 @@ BOOST_AUTO_TEST_CASE( correct_connection_unix )
 {
     BOOST_CHECK_NO_THROW(test_unix_connection());
 }
+// hiredis bug
+//BOOST_AUTO_TEST_CASE( ipv6_connection )
+//{
+//    BOOST_CHECK_NO_THROW(connection::create("::1", 6379));
+//}
 
 BOOST_AUTO_TEST_CASE( test_info)
 {
@@ -44,6 +49,15 @@ BOOST_AUTO_TEST_CASE( test_ping)
     BOOST_CHECK_EQUAL(r.str(), "PONG");
 }
 
+BOOST_AUTO_TEST_CASE( test_reply_operators)
+{
+    test_connection tc;
+    reply r = tc->run(command("PING"));
+    std::string value = r;
+    BOOST_CHECK_EQUAL(value, "PONG");
+    BOOST_CHECK_EQUAL(r, "PONG");
+}
+
 BOOST_AUTO_TEST_CASE( set_get)
 {
     test_connection tc;
@@ -59,10 +73,10 @@ BOOST_AUTO_TEST_CASE( test_types)
 
     tc->run(command("SET") << "double" << 0.40);
 
-    BOOST_CHECK_CLOSE(boost::lexical_cast<double>(tc->run(command("GET") << "double").str()), 0.40, 0.1);
+    BOOST_CHECK_CLOSE(std::stod(tc->run(command("GET") << "double").str()), 0.40, 0.1);
 
     tc->run(command("SET") << "test" << 100);
-    BOOST_CHECK_EQUAL(boost::lexical_cast<int>(tc->run(command("GET") << "test").str()), 100);
+    BOOST_CHECK_EQUAL(std::stoi(tc->run(command("GET") << "test").str()), 100);
 
     tc->run(command("SET") << "test" << "xxx");
     BOOST_CHECK_EQUAL(tc->run(command("GET") << "test").str(), std::string("xxx"));

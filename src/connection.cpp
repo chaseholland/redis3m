@@ -2,7 +2,6 @@
 // Licensed under Apache 2.0, see LICENSE for details
 
 #include <redis3m/connection.h>
-#include <boost/assign/list_of.hpp>
 #include <hiredis/hiredis.h>
 
 using namespace redis3m;
@@ -61,20 +60,26 @@ reply connection::get_reply()
     }
     reply ret(r);
     freeReplyObject(r);
+
+    if (ret.type() == reply::type_t::ERROR &&
+		(ret.str().find("READONLY") == 0) )
+    {
+        throw slave_read_only();
+    }
     return ret;
 }
 
 std::vector<reply> connection::get_replies(unsigned int count)
 {
     std::vector<reply> ret;
-    for (int i=0; i < count; ++i)
+    for (unsigned int i=0; i < count; ++i)
     {
         ret.push_back(get_reply());
     }
     return ret;
 }
 
-bool connection::is_valid()
+bool connection::is_valid() const
 {
     return c->err == REDIS_OK;
 }

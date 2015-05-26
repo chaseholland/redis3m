@@ -5,24 +5,26 @@
 
 #include <string>
 #include <redis3m/utils/exception.h>
+#include <redis3m/utils/noncopyable.h>
 #include <redis3m/reply.h>
 #include <vector>
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
+#include <memory>
 
 struct redisContext;
 
 namespace redis3m {
-REDIS3M_EXCEPTION(unable_to_connect)
-REDIS3M_EXCEPTION(transport_failure)
+REDIS3M_EXCEPTION(connection_error)
+REDIS3M_EXCEPTION_2(unable_to_connect, connection_error)
+REDIS3M_EXCEPTION_2(transport_failure, connection_error)
+REDIS3M_EXCEPTION_2(slave_read_only, connection_error)
 
 /**
 * @brief The connection class, represent a connection to a Redis server
 */
-class connection: boost::noncopyable
+class connection: utils::noncopyable
 {
 public:
-    typedef boost::shared_ptr<connection> ptr_t;
+    typedef std::shared_ptr<connection> ptr_t;
 
     /**
      * @brief Create and open a new connection
@@ -48,7 +50,7 @@ public:
 
     ~connection();
 
-    bool is_valid();
+    bool is_valid() const;
 
     /**
      * @brief Append a command to Redis server
