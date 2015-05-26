@@ -40,6 +40,28 @@ public:
     redis3m::connection::ptr_t c;
 };
 
+class test_unix_connection
+{
+public:
+    test_unix_connection()
+    {
+        c = redis3m::connection::createUnix("/tmp/redis.sock");
+        c->run(command("FLUSHDB"));
+    }
+
+    inline redis3m::connection::ptr_t operator*()
+    {
+        return c;
+    }
+
+    inline redis3m::connection::ptr_t operator->()
+    {
+        return c;
+    }
+
+    redis3m::connection::ptr_t c;
+};
+
 class test_simple_pool
 {
 public:
