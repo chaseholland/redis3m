@@ -10,11 +10,20 @@ BOOST_AUTO_TEST_CASE ( fail_connect )
     BOOST_CHECK_THROW(connection::create("localhost", 9090), unable_to_connect);
 }
 
+BOOST_AUTO_TEST_CASE ( fail_connect_unix )
+{
+    BOOST_CHECK_THROW(connection::createUnix("/tmp/notredis.sock"), unable_to_connect);
+}
+
 BOOST_AUTO_TEST_CASE( correct_connection )
 {
     BOOST_CHECK_NO_THROW(test_connection());
 }
 
+BOOST_AUTO_TEST_CASE( correct_connection_unix )
+{
+    BOOST_CHECK_NO_THROW(test_unix_connection());
+}
 // hiredis bug
 //BOOST_AUTO_TEST_CASE( ipv6_connection )
 //{
@@ -24,6 +33,12 @@ BOOST_AUTO_TEST_CASE( correct_connection )
 BOOST_AUTO_TEST_CASE( test_info)
 {
     test_connection tc;
+    redis3m::reply r = tc->run(command("INFO"));
+}
+
+BOOST_AUTO_TEST_CASE( test_info_unix )
+{
+    test_unix_connection tc;
     redis3m::reply r = tc->run(command("INFO"));
 }
 
