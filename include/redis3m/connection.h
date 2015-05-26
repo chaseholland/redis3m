@@ -36,6 +36,16 @@ public:
         return ptr_t(new connection(host, port));
     }
 
+    /**
+     * @brief Create and open a new connection using a unix domain socket file
+     * @param unix file to connect with ie /tmp/redis.sock
+     * @return Returns a new connection
+     */
+    inline static ptr_t createUnix(const std::string& unix_file)
+    {
+        return ptr_t(new connection(unix_file));
+    }
+
     ~connection();
 
     bool is_valid();
@@ -88,6 +98,7 @@ public:
 private:
     friend class connection_pool;
     connection(const std::string& host, const unsigned int port);
+    connection(const std::string& file);
 
     role_t _role;
     redisContext *c;

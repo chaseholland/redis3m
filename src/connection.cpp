@@ -17,6 +17,16 @@ connection::connection(const std::string& host, const unsigned port)
     }
 }
 
+connection::connection(const std::string& unix_file)
+{
+    c = redisConnectUnix(unix_file.c_str());
+    if (c->err != REDIS_OK)
+    {
+        redisFree(c);
+        throw unable_to_connect();
+    }
+}
+
 connection::~connection()
 {
     redisFree(c);
